@@ -1,4 +1,6 @@
-const { ApolloServer, gql } = require("apollo-server");
+import { ApolloServer, gql } from 'apollo-server-express';
+import express from 'express';
+import http from 'http';
 
 const books = [
     {
@@ -43,18 +45,20 @@ const resolvers = {
     },
 };
 
-// The ApolloServer constructor requires two parameters: your schema
+async function startApolloServer() {
+    const app = express();
+    const httpServer = http.createServer(app);
 
-// definition and your set of resolvers.
+    const server = new ApolloServer({
+        typeDefs: typeDefs,
+        resolvers: resolvers,
+        csrfPrevention: true,
+    });
 
-const server = new ApolloServer({
-    typeDefs,
-    resolvers,
-    csrfPrevention: true,
-});
+    await server.start();
+    server.applyMiddleware({ app });
+    await new Promise<void>(resolve => httpServer.listen({ port: 4000 }, resolve));
+    console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
+}
 
-// The `listen` method launches a web server.
-
-server.listen().then(({ url }) => {
-    console.log(`🚀  Server ready at ${url}`);
-});
+startApolloServer()
